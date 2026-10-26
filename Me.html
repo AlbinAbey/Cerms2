@@ -1,0 +1,1489 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>College Event Resource Management System (CERMS) - SEPM Prototype</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#EEF2FF',
+                            100: '#E0E7FF',
+                            500: '#6366F1',
+                            600: '#4F46E5',
+                            700: '#4338CA',
+                            900: '#312E81',
+                        },
+                        cerms: {
+                            dark: '#0F172A',
+                            card: '#1E293B',
+                            accent: '#06B6D4',
+                            emerald: '#10B981',
+                            amber: '#F59E0B',
+                            rose: '#F43F5E',
+                            purple: '#A855F7'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0B0F19;
+            color: #F8FAFC;
+        }
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glass-card-hover:hover {
+            border-color: rgba(99, 102, 241, 0.4);
+            transform: translateY(-2px);
+            transition: all 0.2s ease;
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #38BDF8 0%, #818CF8 50%, #C084FC 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .glow-cyan {
+            box-shadow: 0 0 20px -3px rgba(6, 182, 212, 0.25);
+        }
+        .glow-rose {
+            box-shadow: 0 0 20px -3px rgba(244, 63, 94, 0.25);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0B0F19;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col bg-slate-950 text-slate-100 antialiased selection:bg-cyan-500 selection:text-black">
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-3 pointer-events-none"></div>
+
+    <!-- Header Navigation with Persona Role Switcher -->
+    <header class="sticky top-0 z-40 w-full border-b border-slate-800 bg-slate-900/90 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+            <!-- Title Branding -->
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 via-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+                    <i class="fa-solid fa-cubes text-slate-950 text-lg font-black"></i>
+                </div>
+                <div>
+                    <span class="text-xl font-extrabold tracking-tight text-white flex items-center gap-2">
+                        CERMS<span class="gradient-text">2026</span>
+                        <span class="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 font-semibold uppercase tracking-wider">SEPM Presentation</span>
+                    </span>
+                    <p class="text-[10px] text-slate-400 -mt-1 hidden sm:block">College Event Resource Management System</p>
+                </div>
+            </div>
+
+            <!-- Multi-Role Switcher Bar -->
+            <div class="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
+                <button onclick="switchRole('organizer')" id="btn-role-organizer" class="role-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 flex items-center gap-1.5 text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-user-gear"></i>
+                    <span class="hidden md:inline">Event Organizer</span>
+                </button>
+                <button onclick="switchRole('admin')" id="btn-role-admin" class="role-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 flex items-center gap-1.5 text-slate-400 hover:text-white relative">
+                    <i class="fa-solid fa-warehouse"></i>
+                    <span class="hidden md:inline">Resource Manager / Admin</span>
+                    <span id="conflict-badge" class="ml-1 px-1.5 py-0.2 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30 text-[10px] font-bold">1</span>
+                </button>
+                <button onclick="switchRole('volunteer')" id="btn-role-volunteer" class="role-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 flex items-center gap-1.5 text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-hands-helping"></i>
+                    <span class="hidden md:inline">Volunteer</span>
+                </button>
+                <button onclick="switchRole('vendor')" id="btn-role-vendor" class="role-btn px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 flex items-center gap-1.5 text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-truck-field"></i>
+                    <span class="hidden md:inline">External Vendor</span>
+                </button>
+            </div>
+
+            <!-- SEPM Presentation Artifacts Drawer Trigger -->
+            <button onclick="toggleSepmDrawer()" class="px-3 py-2 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 text-xs font-bold flex items-center gap-2 transition-all">
+                <i class="fa-solid fa-diagram-project text-cyan-400"></i>
+                <span class="hidden sm:inline">SEPM Artifacts</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
+
+        <!-- REAL-TIME CONFLICT ALERT BANNER (STANDOUT FEATURE) -->
+        <div id="conflict-alert-banner" class="rounded-2xl bg-gradient-to-r from-rose-950/80 via-slate-900 to-slate-900 border border-rose-500/40 p-4 sm:p-5 glow-rose relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div class="flex items-start gap-3.5">
+                <div class="p-3 bg-rose-500/20 rounded-xl text-rose-400 border border-rose-500/30 shrink-0">
+                    <i class="fa-solid fa-triangle-exclamation text-xl animate-bounce"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[10px] font-bold uppercase tracking-wider">Automated System Conflict Alert</span>
+                        <h3 class="text-sm font-bold text-white">Resource Time-Slot Overlap Detected!</h3>
+                    </div>
+                    <p class="text-xs text-slate-300 mt-1">
+                        <strong class="text-rose-300">Auditorium Projector 1</strong> is double-booked: 
+                        <span class="text-white font-medium">TechNova 2026</span> (10:00 AM – 02:00 PM) overlaps with 
+                        <span class="text-white font-medium">Coding Workshop B</span> (12:00 PM – 03:00 PM).
+                    </p>
+                </div>
+            </div>
+            <button onclick="openConflictResolverModal()" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-lg shadow-rose-600/30 flex items-center gap-2 shrink-0 transition-all">
+                <i class="fa-solid fa-wrench"></i> Launch Conflict Resolver
+            </button>
+        </div>
+
+        <!-- EVENT SELECTOR & CREATION BAR -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-900 p-4 rounded-2xl border border-slate-800">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full md:w-auto">
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider shrink-0">Active Campus Event:</span>
+                <select id="event-selector" onchange="switchActiveEvent(this.value)" class="w-full sm:w-64 bg-slate-950 border border-slate-800 text-sm font-bold text-cyan-400 px-3.5 py-2 rounded-xl focus:outline-none focus:border-cyan-500">
+                    <!-- Dynamic Event Options -->
+                </select>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2 w-full md:w-auto justify-start md:justify-end">
+                <button onclick="openCreateEventModal()" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs flex items-center gap-1.5 shadow-lg shadow-indigo-600/20 transition-all">
+                    <i class="fa-solid fa-plus-circle"></i> Create New Event
+                </button>
+                <button onclick="openEditEventModal()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs flex items-center gap-1.5 transition-all">
+                    <i class="fa-solid fa-pen-to-square"></i> Edit
+                </button>
+                <button onclick="deleteCurrentEvent()" class="px-3.5 py-2 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 border border-rose-500/30 text-rose-300 font-semibold text-xs flex items-center gap-1.5 transition-all">
+                    <i class="fa-solid fa-trash-can"></i> Delete Event
+                </button>
+            </div>
+        </div>
+
+        <!-- HERO & ACTIVE EVENT SUMMARY CARD -->
+        <section class="glass-card rounded-2xl p-6 border border-slate-800 bg-gradient-to-br from-slate-900 via-slate-900/90 to-slate-950 relative overflow-hidden glow-cyan">
+            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+                <div class="space-y-2">
+                    <div class="flex items-center gap-2">
+                        <span class="px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 text-xs font-bold">Event Details</span>
+                        <span id="active-event-date" class="text-xs text-slate-400"><i class="fa-solid fa-calendar mr-1"></i>15 November 2026</span>
+                    </div>
+                    <h1 id="active-event-title" class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+                        <span class="gradient-text">TechNova 2026</span> — Department Tech Fest
+                    </h1>
+                    <p class="text-xs sm:text-sm text-slate-400 max-w-3xl">
+                        Venue: <strong id="active-event-venue" class="text-slate-200">Department Auditorium</strong> | Organizers: <strong id="active-event-org" class="text-slate-200">CS & IT Department</strong> | Attendance: <strong id="active-event-attend" class="text-slate-200">250+ Students</strong>
+                    </p>
+                </div>
+
+                <!-- Event Quick Controls -->
+                <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                    <button onclick="openRequestResourceModal()" class="px-4 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold text-xs flex items-center gap-2 shadow-lg shadow-cyan-600/20 transition-all">
+                        <i class="fa-solid fa-cart-plus"></i> Request Resource
+                    </button>
+                </div>
+            </div>
+
+            <!-- Dynamic Stats Summary Cards -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 pt-6 border-t border-slate-800">
+                <div class="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800">
+                    <span class="text-[11px] text-slate-400 font-medium">Resources Allocated</span>
+                    <div id="stat-resources-text" class="text-lg font-bold text-white mt-0.5 flex items-center justify-between">
+                        <span>7 Items</span>
+                        <i class="fa-solid fa-boxes-packing text-cyan-400 text-sm"></i>
+                    </div>
+                    <span id="stat-resources-sub" class="text-[10px] text-amber-400 font-semibold">2 Deficits Pending</span>
+                </div>
+
+                <div class="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800">
+                    <span class="text-[11px] text-slate-400 font-medium">Assigned Volunteers</span>
+                    <div id="stat-volunteers-text" class="text-lg font-bold text-white mt-0.5 flex items-center justify-between">
+                        <span>15 / 20 Students</span>
+                        <i class="fa-solid fa-users text-indigo-400 text-sm"></i>
+                    </div>
+                    <span id="stat-volunteers-sub" class="text-[10px] text-rose-400 font-semibold">Need 5 More</span>
+                </div>
+
+                <div class="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800">
+                    <span class="text-[11px] text-slate-400 font-medium">Event Budget Utilization</span>
+                    <div id="stat-budget-text" class="text-lg font-bold text-white mt-0.5 flex items-center justify-between">
+                        <span>$1,450 / $1,800</span>
+                        <i class="fa-solid fa-wallet text-emerald-400 text-sm"></i>
+                    </div>
+                    <span id="stat-budget-sub" class="text-[10px] text-emerald-400 font-semibold">Within Planned Limit</span>
+                </div>
+
+                <div class="bg-slate-950/60 p-3.5 rounded-xl border border-slate-800">
+                    <span class="text-[11px] text-slate-400 font-medium">External Vendors</span>
+                    <div id="stat-vendors-text" class="text-lg font-bold text-white mt-0.5 flex items-center justify-between">
+                        <span>3 Vendors</span>
+                        <i class="fa-solid fa-handshake text-purple-400 text-sm"></i>
+                    </div>
+                    <span class="text-[10px] text-cyan-400 font-semibold">Active Procurement</span>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- ACTIVE PERSONA INDICATOR & CATEGORY FILTER -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
+            <div class="flex items-center gap-3">
+                <div id="persona-badge-icon" class="w-9 h-9 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold">
+                    <i class="fa-solid fa-user-gear"></i>
+                </div>
+                <div>
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Active User Context</span>
+                    <h2 id="persona-title" class="text-sm font-bold text-white">Event Organizer Workspace</h2>
+                </div>
+            </div>
+
+            <!-- Global Category Filter -->
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+                <span class="text-xs text-slate-400">Inventory Filter:</span>
+                <select id="resource-category-select" onchange="filterResourceTable()" class="bg-slate-950 border border-slate-800 text-xs text-slate-200 px-3 py-2 rounded-xl focus:outline-none focus:border-cyan-500">
+                    <option value="All">All Resource Categories</option>
+                    <option value="Equipment">Equipment (Projectors, Mics, Sound)</option>
+                    <option value="Materials">Materials (Decorations, Stationery, Props, Certificates)</option>
+                    <option value="Venue">Venues & Halls</option>
+                    <option value="Staffing">Volunteers & Staffing</option>
+                </select>
+            </div>
+        </div>
+
+
+        <!-- VIEW 1: EVENT ORGANIZER WORKSPACE (DEFAULT) -->
+        <section id="view-organizer" class="role-view space-y-8">
+
+            <!-- SECTION A: MATERIAL & EQUIPMENT AVAILABILITY MATRIX -->
+            <div class="glass-card rounded-2xl border border-slate-800 overflow-hidden space-y-4">
+                <div class="p-5 bg-slate-900/80 border-b border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <div>
+                        <h3 class="text-base font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-boxes-stacked text-cyan-400"></i> Material & Equipment Availability Matrix
+                        </h3>
+                        <p class="text-xs text-slate-400">Real-time status of Venues, Equipment, Materials (props, stationery, certificates) and Volunteers.</p>
+                    </div>
+                    <button onclick="openRequestResourceModal()" class="px-3.5 py-1.5 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 text-xs font-semibold flex items-center gap-1.5">
+                        <i class="fa-solid fa-plus"></i> Add New Material / Resource
+                    </button>
+                </div>
+
+                <!-- Interactive Table -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-slate-950 text-slate-400 uppercase text-[10px] font-bold tracking-wider border-b border-slate-800">
+                            <tr>
+                                <th class="p-4">Resource / Material Name</th>
+                                <th class="p-4">Category</th>
+                                <th class="p-4">Required</th>
+                                <th class="p-4">Available</th>
+                                <th class="p-4">Status</th>
+                                <th class="p-4 text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resource-table-body" class="divide-y divide-slate-800/60 font-medium">
+                            <!-- Dynamic Content Rendered by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+
+            <!-- SECTION B: TASK MANAGEMENT & VOLUNTEER ASSIGNMENT KANBAN -->
+            <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-base font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-tasks text-indigo-400"></i> Task Management & Volunteer Assignment
+                        </h3>
+                        <p class="text-xs text-slate-400">Assign specific operational tasks to volunteers and track progress.</p>
+                    </div>
+                    <button onclick="openAddTaskModal()" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-all">
+                        <i class="fa-solid fa-plus"></i> New Task Assignment
+                    </button>
+                </div>
+
+                <!-- Kanban Task Columns -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Column: To Do -->
+                    <div class="glass-card rounded-2xl p-4 border border-slate-800 space-y-3">
+                        <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+                            <span class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-amber-400"></span> To Do (<span id="todo-count">2</span>)
+                            </span>
+                            <i class="fa-solid fa-ellipsis text-slate-500"></i>
+                        </div>
+                        <div id="kanban-todo" class="space-y-3 min-h-[160px]">
+                            <!-- Cards inserted by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Column: In Progress -->
+                    <div class="glass-card rounded-2xl p-4 border border-slate-800 space-y-3">
+                        <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+                            <span class="text-xs font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-indigo-400"></span> In Progress (<span id="inprog-count">2</span>)
+                            </span>
+                            <i class="fa-solid fa-ellipsis text-slate-500"></i>
+                        </div>
+                        <div id="kanban-inprog" class="space-y-3 min-h-[160px]">
+                            <!-- Cards inserted by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Column: Completed -->
+                    <div class="glass-card rounded-2xl p-4 border border-slate-800 space-y-3">
+                        <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+                            <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Completed (<span id="done-count">1</span>)
+                            </span>
+                            <i class="fa-solid fa-ellipsis text-slate-500"></i>
+                        </div>
+                        <div id="kanban-done" class="space-y-3 min-h-[160px]">
+                            <!-- Cards inserted by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- SECTION C: BUDGET & VENDOR MANAGEMENT MODULE (No Circular Graph) -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Planned vs Actual Budget Metric Meters (Replaces Circular Graph) -->
+                <div class="glass-card p-5 rounded-2xl border border-slate-800 space-y-4">
+                    <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-calculator text-emerald-400"></i> Financial Budget Breakdown
+                        </h3>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Planned vs Actual</span>
+                    </div>
+
+                    <!-- Budget Progress Meter -->
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-xs">
+                            <span class="text-slate-400 font-medium">Overall Budget Used</span>
+                            <span id="budget-percentage-text" class="font-bold text-emerald-400">80.5%</span>
+                        </div>
+                        <div class="w-full h-3 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
+                            <div id="budget-progress-bar" class="h-full bg-gradient-to-r from-cyan-500 via-indigo-500 to-emerald-500 rounded-full" style="width: 80.5%;"></div>
+                        </div>
+                        <div class="flex justify-between text-[11px] text-slate-400 pt-1">
+                            <span>Actual Spent: <strong id="budget-actual-text" class="text-white">$1,450</strong></span>
+                            <span>Total Limit: <strong id="budget-limit-text" class="text-white">$1,800</strong></span>
+                        </div>
+                    </div>
+
+                    <!-- Category Wise Expenditures -->
+                    <div class="space-y-3 pt-2 text-xs">
+                        <div class="space-y-1">
+                            <div class="flex justify-between text-[11px]">
+                                <span class="text-slate-300">Sound & Stage Equipment</span>
+                                <span class="text-slate-400">$450 / $500</span>
+                            </div>
+                            <div class="w-full h-1.5 bg-slate-950 rounded-full overflow-hidden">
+                                <div class="h-full bg-cyan-400 rounded-full" style="width: 90%;"></div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-1">
+                            <div class="flex justify-between text-[11px]">
+                                <span class="text-slate-300">Catering & Refreshments</span>
+                                <span class="text-slate-400">$700 / $800</span>
+                            </div>
+                            <div class="w-full h-1.5 bg-slate-950 rounded-full overflow-hidden">
+                                <div class="h-full bg-emerald-400 rounded-full" style="width: 87.5%;"></div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-1">
+                            <div class="flex justify-between text-[11px]">
+                                <span class="text-slate-300">Materials, Props & Banners</span>
+                                <span class="text-slate-400">$300 / $500</span>
+                            </div>
+                            <div class="w-full h-1.5 bg-slate-950 rounded-full overflow-hidden">
+                                <div class="h-full bg-purple-400 rounded-full" style="width: 60%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- External Vendors List -->
+                <div class="lg:col-span-2 glass-card p-5 rounded-2xl border border-slate-800 space-y-4">
+                    <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-handshake text-purple-400"></i> External Vendors & Service Contracts
+                        </h3>
+                        <button onclick="openVendorBillModal()" class="text-xs text-indigo-400 hover:text-indigo-300 font-semibold">
+                            + Submit Vendor Invoice
+                        </button>
+                    </div>
+
+                    <div id="vendor-list" class="space-y-3">
+                        <!-- Rendered by JS -->
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- SECTION D: EVENT TIMELINE & SCHEDULE CALENDAR -->
+            <div class="glass-card p-5 rounded-2xl border border-slate-800 space-y-4">
+                <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                    <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-clock-rotate-left text-amber-400"></i> Event Schedule & Activity Timeline
+                    </h3>
+                    <span id="timeline-venue-tag" class="text-xs text-slate-400">Venue: Dept Auditorium</span>
+                </div>
+
+                <div id="event-timeline-container" class="space-y-3 text-xs">
+                    <!-- Rendered by JS based on Active Event -->
+                </div>
+            </div>
+        </section>
+
+
+        <!-- VIEW 2: RESOURCE MANAGER / ADMIN WORKSPACE -->
+        <section id="view-admin" class="role-view hidden space-y-6">
+            <div class="glass-card p-6 rounded-2xl border border-slate-800 bg-gradient-to-r from-slate-900 to-indigo-950 space-y-2">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-warehouse text-cyan-400"></i> Central Inventory & Equipment Control Center
+                    </h2>
+                    <span class="px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-bold">
+                        Admin Privileges Active
+                    </span>
+                </div>
+                <p class="text-xs text-slate-400">Approve resource allocations across college departments, manage equipment repairs, and resolve time conflicts.</p>
+            </div>
+
+            <!-- Pending Resource Requests Approval Queue -->
+            <div class="glass-card p-5 rounded-2xl border border-slate-800 space-y-4">
+                <h3 class="text-sm font-bold text-white flex items-center justify-between">
+                    <span>Pending Resource Requisitions</span>
+                    <span class="text-xs text-amber-400 font-bold">1 Approval Pending</span>
+                </h3>
+
+                <div class="p-4 bg-slate-950 rounded-xl border border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div class="space-y-1">
+                        <div class="flex items-center gap-2">
+                            <span class="px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px] font-bold">Pending Review</span>
+                            <span class="text-xs text-slate-400">Requested by: ACM Student Chapter</span>
+                        </div>
+                        <h4 class="text-sm font-bold text-white">Request: 2x Wireless Microphones for Cultural Fest</h4>
+                        <p class="text-xs text-slate-400">Date: Nov 20, 2026 • Duration: 04:00 PM – 09:00 PM</p>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button onclick="showToast('Approved Microphone Request for Cultural Fest!')" class="px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold">
+                            Approve
+                        </button>
+                        <button onclick="showToast('Resource Request Declined')" class="px-3 py-2 rounded-lg bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/30 text-xs font-bold">
+                            Reject
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- VIEW 3: VOLUNTEER WORKSPACE -->
+        <section id="view-volunteer" class="role-view hidden space-y-6">
+            <div class="glass-card p-6 rounded-2xl border border-slate-800 bg-gradient-to-r from-slate-900 to-indigo-950 space-y-2">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-hands-helping text-indigo-400"></i> Student Volunteer Portal
+                    </h2>
+                    <span class="px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs font-bold">
+                        Logged in as: Rahul (Volunteer)
+                    </span>
+                </div>
+                <p class="text-xs text-slate-400">View your assigned tasks for the active event, duty timings, and update execution progress.</p>
+            </div>
+
+            <!-- Volunteer Assigned Tasks Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="volunteer-tasks-grid">
+                <!-- Rendered dynamically -->
+            </div>
+        </section>
+
+
+        <!-- VIEW 4: EXTERNAL VENDOR WORKSPACE -->
+        <section id="view-vendor" class="role-view hidden space-y-6">
+            <div class="glass-card p-6 rounded-2xl border border-slate-800 bg-gradient-to-r from-slate-900 to-purple-950 space-y-2">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-truck-field text-purple-400"></i> External Vendor Service Portal
+                    </h2>
+                    <span class="px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 text-xs font-bold">
+                        Vendor ID: VEND-2026-SOUND
+                    </span>
+                </div>
+                <p class="text-xs text-slate-400">Manage contract orders, service delivery schedules, and submit digital invoices for college events.</p>
+            </div>
+
+            <div class="glass-card p-5 rounded-2xl border border-slate-800 space-y-4">
+                <h3 class="text-sm font-bold text-white">Active Service Purchase Order</h3>
+                <div class="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-3">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="text-[10px] font-bold text-cyan-400 uppercase">Sound & Audio Rental</span>
+                            <h4 class="text-base font-bold text-white">Apex Sound Systems Ltd.</h4>
+                            <p class="text-xs text-slate-400">Contract: 4x JBL Speakers + 4x Cordless Mics for TechNova 2026</p>
+                        </div>
+                        <span class="px-2.5 py-1 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 text-xs font-bold">
+                            Delivery Pending (Nov 15)
+                        </span>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-2 border-t border-slate-800 text-xs">
+                        <span class="text-slate-400">Quoted Amount: <strong class="text-white">$450.00</strong></span>
+                        <button onclick="openVendorBillModal()" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold">
+                            Submit Final Invoice
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+
+    <!-- SLIDE-OVER DRAWER: SEPM PRESENTATION ARTIFACTS -->
+    <div id="sepm-drawer" class="fixed inset-y-0 right-0 z-50 w-full max-w-xl bg-slate-900 border-l border-slate-800 shadow-2xl transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col">
+        <!-- Drawer Header -->
+        <div class="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950">
+            <div class="flex items-center gap-2.5">
+                <div class="p-2 bg-cyan-500/20 border border-cyan-500/30 rounded-lg text-cyan-400">
+                    <i class="fa-solid fa-diagram-project text-lg"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-white text-base">CERMS Architectural Artifacts</h3>
+                    <p class="text-xs text-slate-400">Software Engineering & Project Management Diagrams</p>
+                </div>
+            </div>
+            <button onclick="toggleSepmDrawer()" class="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <!-- Drawer Content Navigation -->
+        <div class="p-4 border-b border-slate-800 bg-slate-900/50 flex gap-2">
+            <button onclick="switchSepmTab('usecase')" id="sepm-tab-usecase" class="sepm-tab-btn flex-1 py-1.5 rounded-lg text-xs font-semibold bg-cyan-600 text-slate-950">Use Cases</button>
+            <button onclick="switchSepmTab('conflict')" id="sepm-tab-conflict" class="sepm-tab-btn flex-1 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white">Conflict Engine</button>
+            <button onclick="switchSepmTab('er')" id="sepm-tab-er" class="sepm-tab-btn flex-1 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white">ER Schema</button>
+        </div>
+
+        <!-- Drawer Body -->
+        <div class="flex-1 overflow-y-auto p-6 space-y-6 text-xs">
+
+            <!-- SEPM Tab 1: Use Cases -->
+            <div id="sepm-content-usecase" class="space-y-4">
+                <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800">
+                    <h4 class="font-bold text-cyan-400 uppercase tracking-wider mb-1">Actor vs. System Capabilities Matrix</h4>
+                    <p class="text-slate-400">Role-based permission boundaries mapped to CERMS software modules.</p>
+                </div>
+
+                <div class="space-y-3">
+                    <div class="p-3 rounded-lg bg-slate-950 border border-slate-800">
+                        <span class="font-bold text-white block mb-1">1. Event Organizer</span>
+                        <p class="text-slate-400">Create & delete events, request equipment & materials, allocate volunteer tasks, manage budget limits.</p>
+                    </div>
+                    <div class="p-3 rounded-lg bg-slate-950 border border-slate-800">
+                        <span class="font-bold text-white block mb-1">2. Resource Manager / Admin</span>
+                        <p class="text-slate-400">Approve equipment requisitions, manage central inventory, override time slot conflicts.</p>
+                    </div>
+                    <div class="p-3 rounded-lg bg-slate-950 border border-slate-800">
+                        <span class="font-bold text-white block mb-1">3. Student Volunteer</span>
+                        <p class="text-slate-400">View task board, report duty completion status, track event timetable.</p>
+                    </div>
+                    <div class="p-3 rounded-lg bg-slate-950 border border-slate-800">
+                        <span class="font-bold text-white block mb-1">4. External Vendor</span>
+                        <p class="text-slate-400">Receive service POs, update fulfillment status, upload digital invoices.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SEPM Tab 2: Conflict Detection Flowchart -->
+            <div id="sepm-content-conflict" class="hidden space-y-4">
+                <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800">
+                    <h4 class="font-bold text-rose-400 uppercase tracking-wider mb-1">Resource Conflict Algorithm Logic</h4>
+                    <p class="text-slate-400">Pseudocode logic executed upon booking request:</p>
+                </div>
+
+                <div class="p-4 rounded-xl bg-slate-950 font-mono text-[11px] text-cyan-300 border border-slate-800 space-y-1">
+                    <p>IF (RequestedResource.Quantity > Inventory.Available) {</p>
+                    <p class="pl-4 text-amber-400">Trigger Status: ⚠️ Deficit Warning;</p>
+                    <p>}</p>
+                    <p>IF (RequestedTime.Start &lt; ExistingBooking.End AND RequestedTime.End &gt; ExistingBooking.Start) {</p>
+                    <p class="pl-4 text-rose-400">Trigger Conflict Alert Banner;</p>
+                    <p class="pl-4 text-rose-400">Lock double-allocation in Database;</p>
+                    <p>}</p>
+                </div>
+            </div>
+
+            <!-- SEPM Tab 3: ER Schema -->
+            <div id="sepm-content-er" class="hidden space-y-4">
+                <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800">
+                    <h4 class="font-bold text-purple-400 uppercase tracking-wider mb-1">Relational ER Entities</h4>
+                    <p class="text-slate-400">Core database tables and foreign keys powering CERMS.</p>
+                </div>
+
+                <div class="space-y-2 font-mono">
+                    <div class="p-2.5 rounded bg-slate-950 border border-slate-800">
+                        <strong class="text-white">EVENTS:</strong> <span class="text-slate-400">Event_ID (PK), Title, Date, Venue_ID (FK), Budget</span>
+                    </div>
+                    <div class="p-2.5 rounded bg-slate-950 border border-slate-800">
+                        <strong class="text-white">RESOURCES:</strong> <span class="text-slate-400">Resource_ID (PK), Name, Category, Total_Qty</span>
+                    </div>
+                    <div class="p-2.5 rounded bg-slate-950 border border-slate-800">
+                        <strong class="text-white">ALLOCATIONS:</strong> <span class="text-slate-400">Alloc_ID (PK), Event_ID, Resource_ID, Qty, StartTime, EndTime</span>
+                    </div>
+                    <div class="p-2.5 rounded bg-slate-950 border border-slate-800">
+                        <strong class="text-white">TASKS:</strong> <span class="text-slate-400">Task_ID (PK), Event_ID, Assignee, Status</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- MODAL 1: CONFLICT RESOLVER INTERACTIVE TOOL -->
+    <div id="modal-conflict-resolver" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="glass-card max-w-lg w-full rounded-2xl border border-rose-500/40 p-6 space-y-5 relative">
+            <button onclick="closeConflictResolverModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <div>
+                <span class="text-[10px] font-bold text-rose-400 uppercase tracking-wider">SEPM Resolution Engine</span>
+                <h3 class="text-lg font-bold text-white">Resolve Resource Conflict: Auditorium Projector 1</h3>
+            </div>
+
+            <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 text-xs space-y-2">
+                <div class="flex justify-between">
+                    <span class="text-slate-400">Event A: TechNova 2026</span>
+                    <span class="font-bold text-white">10:00 AM - 02:00 PM</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-400">Event B: Coding Workshop B</span>
+                    <span class="font-bold text-rose-400">12:00 PM - 03:00 PM (Overlap!)</span>
+                </div>
+            </div>
+
+            <div class="space-y-3">
+                <label class="block text-xs text-slate-300 font-semibold">Select Conflict Resolution Strategy:</label>
+                
+                <button onclick="resolveConflict('reassign')" class="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 hover:border-cyan-500 text-left text-xs space-y-0.5 transition-all">
+                    <span class="font-bold text-cyan-400 block">1. Reassign Time Slot for Event B</span>
+                    <span class="text-slate-400">Shift Coding Workshop projector time to 02:00 PM - 05:00 PM.</span>
+                </button>
+
+                <button onclick="resolveConflict('substitute')" class="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 hover:border-indigo-500 text-left text-xs space-y-0.5 transition-all">
+                    <span class="font-bold text-indigo-400 block">2. Allocate Alternative Equipment</span>
+                    <span class="text-slate-400">Assign High-Lumen Portable Projector 2 from Lab 302 to Coding Workshop.</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- MODAL 2: REQUEST RESOURCE MODAL -->
+    <div id="modal-request-resource" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="glass-card max-w-md w-full rounded-2xl border border-slate-800 p-6 space-y-4 relative">
+            <button onclick="closeRequestResourceModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <h3 class="text-base font-bold text-white">Request Resource or Material</h3>
+
+            <form onsubmit="handleResourceRequestSubmit(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="block text-slate-300 mb-1">Resource / Material Name</label>
+                    <input type="text" id="req-resource-name" required placeholder="e.g. Stage Decoration Props / Mics" class="w-full bg-slate-950 border border-slate-800 text-white p-2.5 rounded-lg focus:outline-none focus:border-cyan-500">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-slate-300 mb-1">Category</label>
+                        <select id="req-resource-cat" class="w-full bg-slate-950 border border-slate-800 text-slate-200 p-2.5 rounded-lg">
+                            <option value="Equipment">Equipment</option>
+                            <option value="Materials">Materials</option>
+                            <option value="Venue">Venue</option>
+                            <option value="Staffing">Volunteers & Staffing</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 mb-1">Required Quantity</label>
+                        <input type="number" id="req-resource-qty" required value="10" class="w-full bg-slate-950 border border-slate-800 text-white p-2.5 rounded-lg">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-slate-300 mb-1">Available Quantity in College Stock</label>
+                    <input type="number" id="req-resource-avail" required value="8" class="w-full bg-slate-950 border border-slate-800 text-white p-2.5 rounded-lg">
+                </div>
+
+                <div class="flex gap-2 pt-2">
+                    <button type="button" onclick="closeRequestResourceModal()" class="flex-1 py-2 rounded-lg bg-slate-800 text-slate-300 font-semibold">Cancel</button>
+                    <button type="submit" class="flex-1 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold">Submit Requirement</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- MODAL 3: ADD TASK ASSIGNMENT MODAL -->
+    <div id="modal-add-task" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="glass-card max-w-md w-full rounded-2xl border border-slate-800 p-6 space-y-4 relative">
+            <button onclick="closeAddTaskModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <h3 class="text-base font-bold text-white">Assign Task / Volunteer Duty</h3>
+
+            <form onsubmit="handleAddTaskSubmit(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="block text-slate-300 mb-1">Task Description</label>
+                    <input type="text" id="task-title" required placeholder="e.g. Manage Registration Desk" class="w-full bg-slate-950 border border-slate-800 text-white p-2.5 rounded-lg">
+                </div>
+
+                <div>
+                    <label class="block text-slate-300 mb-1">Assigned Volunteer / Team</label>
+                    <input type="text" id="task-assignee" required placeholder="e.g. Rahul / Media Team" class="w-full bg-slate-950 border border-slate-800 text-white p-2.5 rounded-lg">
+                </div>
+
+                <div class="flex gap-2 pt-2">
+                    <button type="button" onclick="closeAddTaskModal()" class="flex-1 py-2 rounded-lg bg-slate-800 text-slate-300 font-semibold">Cancel</button>
+                    <button type="submit" class="flex-1 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold">Assign Task</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- MODAL 4: VENDOR INVOICE SUBMISSION MODAL -->
+    <div id="modal-vendor-bill" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="glass-card max-w-md w-full rounded-2xl border border-slate-800 p-6 space-y-4 relative">
+            <button onclick="closeVendorBillModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <h3 class="text-base font-bold text-white">Submit Vendor Invoice / Bill</h3>
+
+            <form onsubmit="handleVendorBillSubmit(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="block text-slate-300 mb-1">Vendor / Service Name</label>
+                    <input type="text" id="bill-vendor-name" required value="Apex Sound Systems Ltd." class="w-full bg-slate-950 border border-slate-800 text-white p-2.5 rounded-lg">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-slate-300 mb-1">Billed Amount ($)</label>
+                        <input type="number" id="bill-amount" required value="450" class="w-full bg-slate-950 border border-slate-800 text-white p-2.5 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 mb-1">Invoice Reference</label>
+                        <input type="text" id="bill-ref" required value="INV-8891" class="w-full bg-slate-950 border border-slate-800 text-white p-2.5 rounded-lg">
+                    </div>
+                </div>
+
+                <div class="flex gap-2 pt-2">
+                    <button type="button" onclick="closeVendorBillModal()" class="flex-1 py-2 rounded-lg bg-slate-800 text-slate-300 font-semibold">Cancel</button>
+                    <button type="submit" class="flex-1 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold">Submit Bill</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- MODAL 5: CREATE / EDIT EVENT MODAL -->
+    <div id="modal-event-form" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="glass-card max-w-lg w-full rounded-2xl border border-slate-800 p-6 space-y-4 relative">
+            <button onclick="closeEventModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <h3 id="event-modal-title" class="text-base font-bold text-white">Create New College Event</h3>
+
+            <form onsubmit="handleEventFormSubmit(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="block text-slate-300 mb-1">Event Title</label>
+                    <input type="text" id="form-evt-title" required placeholder="e.g. Annual Cultural Night 2026" class="w-full bg-slate-950 border border-slate-800 text-white p-2.5 rounded-lg focus:outline-none focus:border-cyan-500">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-slate-300 mb-1">Date</label>
+                        <input type="text" id="form-evt-date" required placeholder="20 Nov 2026" class="w-full bg-slate-950 border border-slate-800 text-white p-2.5 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 mb-1">Venue</label>
+                        <input type="text" id="form-evt-venue" required placeholder="Open Air Theatre" class="w-full bg-slate-950 border border-slate-800 text-white p-2.5 rounded-lg">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-slate-300 mb-1">Time Slot</label>
+                        <input type="text" id="form-evt-time" required placeholder="09:00 AM - 05:00 PM" class="w-full bg-slate-950 border border-slate-800 text-white p-2.5 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 mb-1">Expected Attendance</label>
+                        <input type="text" id="form-evt-attend" required placeholder="300+ Students" class="w-full bg-slate-950 border border-slate-800 text-white p-2.5 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 mb-1">Budget ($)</label>
+                        <input type="number" id="form-evt-budget" required placeholder="2000" class="w-full bg-slate-950 border border-slate-800 text-white p-2.5 rounded-lg">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-slate-300 mb-1">Organizing Department / Club</label>
+                    <input type="text" id="form-evt-org" required placeholder="e.g. Fine Arts Club" class="w-full bg-slate-950 border border-slate-800 text-white p-2.5 rounded-lg">
+                </div>
+
+                <div class="flex gap-2 pt-2">
+                    <button type="button" onclick="closeEventModal()" class="flex-1 py-2 rounded-lg bg-slate-800 text-slate-300 font-semibold">Cancel</button>
+                    <button type="submit" id="form-evt-submit-btn" class="flex-1 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold">Save Event</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- JAVASCRIPT APPLICATION LOGIC -->
+    <script>
+        // --- CERMS DATA STORE ---
+        let currentRole = 'organizer';
+        let activeEventId = 'evt-1';
+        let editingEventId = null;
+
+        // Dynamic Multi-Event Database
+        let events = [
+            {
+                id: 'evt-1',
+                title: 'TechNova 2026',
+                date: '15 November 2026',
+                venue: 'Department Auditorium',
+                timeSlot: '09:00 AM - 05:00 PM',
+                organizer: 'CS & IT Dept',
+                attendance: '250+ Students',
+                budgetPlanned: 1800,
+                budgetActual: 1450,
+                resources: [
+                    { id: 'r1', name: 'Auditorium Projector', category: 'Equipment', required: 2, available: 3, status: 'Conflict' },
+                    { id: 'r2', name: 'Microphones', category: 'Equipment', required: 4, available: 2, status: 'Need' },
+                    { id: 'r3', name: 'JBL Speakers', category: 'Equipment', required: 2, available: 2, status: 'Available' },
+                    { id: 'r4', name: 'Student Volunteers', category: 'Staffing', required: 20, available: 15, status: 'Need' },
+                    { id: 'r5', name: 'Stackable Chairs', category: 'Materials', required: 150, available: 200, status: 'Available' },
+                    { id: 'r6', name: 'Certificates & Stationery', category: 'Materials', required: 250, available: 300, status: 'Available' },
+                    { id: 'r7', name: 'Stage Props & Decoration', category: 'Materials', required: 10, available: 10, status: 'Available' },
+                    { id: 'r8', name: 'Department Auditorium', category: 'Venue', required: 1, available: 1, status: 'Available' }
+                ],
+                tasks: [
+                    { id: 't1', title: 'Arrange projector setup', assignee: 'Rahul', status: 'To Do' },
+                    { id: 't2', title: 'Contact sound vendor', assignee: 'Arun', status: 'In Progress' },
+                    { id: 't3', title: 'Hall & Stage Decoration', assignee: 'Decoration Team', status: 'To Do' },
+                    { id: 't4', title: 'Manage Registration Desk', assignee: '4 Volunteers', status: 'In Progress' },
+                    { id: 't5', title: 'Event Photography & Media', assignee: 'Media Team', status: 'Completed' }
+                ],
+                vendors: [
+                    { id: 'v1', name: 'Apex Sound Systems', service: 'Sound & Audio Rental', status: 'Delivered', amount: '$450' },
+                    { id: 'v2', name: 'Campus Printing Hub', service: 'Certificates & Banners', status: 'Quoted', amount: '$300' },
+                    { id: 'v3', name: 'Royal Caterers', service: 'Networking Lunch', status: 'Approved', amount: '$700' }
+                ],
+                schedule: [
+                    { time: '09:00 AM - 10:00 AM', title: 'Inauguration & Keynote Address', note: 'Registration Desk & Sound Check', status: 'Confirmed', badgeClass: 'bg-emerald-500/10 text-emerald-400' },
+                    { time: '10:00 AM - 01:00 PM', title: 'CodeStorm Hackathon Phase 1', note: 'Auditorium Projector & High-speed WiFi', status: 'Projector Conflict Alert', badgeClass: 'bg-rose-500/10 text-rose-400' },
+                    { time: '01:00 PM - 02:00 PM', title: 'Networking Lunch & Exhibition', note: 'Catering Team setup in Quadrangle', status: 'Confirmed', badgeClass: 'bg-emerald-500/10 text-emerald-400' }
+                ]
+            },
+            {
+                id: 'evt-2',
+                title: 'Coding Workshop B',
+                date: '15 November 2026',
+                venue: 'Seminar Hall 302',
+                timeSlot: '12:00 PM - 03:00 PM',
+                organizer: 'Coding Club',
+                attendance: '80 Students',
+                budgetPlanned: 600,
+                budgetActual: 420,
+                resources: [
+                    { id: 'r201', name: 'Auditorium Projector 1', category: 'Equipment', required: 1, available: 0, status: 'Conflict' },
+                    { id: 'r202', name: 'Whiteboard Markers', category: 'Materials', required: 10, available: 15, status: 'Available' },
+                    { id: 'r203', name: 'Lab Assistants / Volunteers', category: 'Staffing', required: 5, available: 5, status: 'Available' },
+                    { id: 'r204', name: 'Seminar Hall 302', category: 'Venue', required: 1, available: 1, status: 'Available' }
+                ],
+                tasks: [
+                    { id: 't201', title: 'Install IDE software on PCs', assignee: 'Lab Assistant', status: 'Completed' },
+                    { id: 't202', title: 'Distribute Workshop Handouts', assignee: '2 Volunteers', status: 'To Do' }
+                ],
+                vendors: [
+                    { id: 'v201', name: 'Snack Central', service: 'Coffee & Refreshments', status: 'Confirmed', amount: '$420' }
+                ],
+                schedule: [
+                    { time: '12:00 PM - 01:30 PM', title: 'Hands-on Python ML Session', note: 'Seminar Hall 302 PC Lab', status: 'Confirmed', badgeClass: 'bg-emerald-500/10 text-emerald-400' },
+                    { time: '01:30 PM - 03:00 PM', title: 'Project Demo & Q&A', note: 'Requires Projector', status: 'Conflict Alert', badgeClass: 'bg-rose-500/10 text-rose-400' }
+                ]
+            }
+        ];
+
+        // --- INITIALIZATION ---
+        window.onload = function() {
+            populateEventSelector();
+            switchRole('organizer');
+            refreshDashboard();
+        };
+
+        // --- MULTI-EVENT SELECTOR LOGIC ---
+        function populateEventSelector() {
+            const selector = document.getElementById('event-selector');
+            selector.innerHTML = events.map(evt => `
+                <option value="${evt.id}" ${evt.id === activeEventId ? 'selected' : ''}>
+                    ${evt.title} (${evt.date})
+                </option>
+            `).join('');
+        }
+
+        function switchActiveEvent(evtId) {
+            activeEventId = evtId;
+            refreshDashboard();
+            showToast(`Switched active event context to "${getActiveEvent().title}"`);
+        }
+
+        function getActiveEvent() {
+            return events.find(e => e.id === activeEventId) || events[0];
+        }
+
+        // --- REFRESH DASHBOARD ---
+        function refreshDashboard() {
+            const evt = getActiveEvent();
+
+            // Header Hero Updates
+            document.getElementById('active-event-title').innerHTML = `<span class="gradient-text">${evt.title}</span>`;
+            document.getElementById('active-event-date').innerHTML = `<i class="fa-solid fa-calendar mr-1"></i>${evt.date}`;
+            document.getElementById('active-event-venue').textContent = evt.venue;
+            document.getElementById('active-event-org').textContent = evt.organizer;
+            document.getElementById('active-event-attend').textContent = evt.attendance;
+
+            // Stats Calculations
+            const totalRes = evt.resources.length;
+            const deficits = evt.resources.filter(r => r.status === 'Need').length;
+            document.getElementById('stat-resources-text').innerHTML = `<span>${totalRes} Items</span><i class="fa-solid fa-boxes-packing text-cyan-400 text-sm"></i>`;
+            document.getElementById('stat-resources-sub').textContent = deficits > 0 ? `${deficits} Deficits Pending` : 'All Allocated';
+
+            const volRes = evt.resources.find(r => r.name.toLowerCase().includes('volunteer') || r.category === 'Staffing');
+            if(volRes) {
+                document.getElementById('stat-volunteers-text').innerHTML = `<span>${volRes.available} / ${volRes.required} Students</span><i class="fa-solid fa-users text-indigo-400 text-sm"></i>`;
+                const diff = volRes.required - volRes.available;
+                document.getElementById('stat-volunteers-sub').textContent = diff > 0 ? `Need ${diff} More` : 'Fully Staffed';
+            } else {
+                document.getElementById('stat-volunteers-text').innerHTML = `<span>N/A</span><i class="fa-solid fa-users text-indigo-400 text-sm"></i>`;
+            }
+
+            // Budget Meters Update (Replaces Circular Graph)
+            const planned = evt.budgetPlanned || 1000;
+            const actual = evt.budgetActual || 0;
+            const pct = Math.min(100, Math.round((actual / planned) * 100));
+
+            document.getElementById('stat-budget-text').innerHTML = `<span>$${actual} / $${planned}</span><i class="fa-solid fa-wallet text-emerald-400 text-sm"></i>`;
+            document.getElementById('budget-actual-text').textContent = `$${actual}`;
+            document.getElementById('budget-limit-text').textContent = `$${planned}`;
+            document.getElementById('budget-percentage-text').textContent = `${pct}%`;
+            document.getElementById('budget-progress-bar').style.width = `${pct}%`;
+
+            document.getElementById('stat-vendors-text').innerHTML = `<span>${evt.vendors.length} Vendors</span><i class="fa-solid fa-handshake text-purple-400 text-sm"></i>`;
+
+            // Render Modules
+            renderResourceTable();
+            renderKanbanTasks();
+            renderVendorsList();
+            renderVolunteerTasks();
+            renderEventSchedule();
+        }
+
+        // --- ROLE SWITCHER LOGIC ---
+        function switchRole(role) {
+            currentRole = role;
+
+            document.querySelectorAll('.role-btn').forEach(btn => {
+                btn.classList.remove('bg-indigo-600', 'bg-cyan-600', 'bg-purple-600', 'text-white', 'text-slate-950');
+                btn.classList.add('text-slate-400');
+            });
+
+            const activeBtn = document.getElementById(`btn-role-${role}`);
+            if(activeBtn) {
+                if(role === 'organizer') activeBtn.classList.add('bg-indigo-600', 'text-white');
+                if(role === 'admin') activeBtn.classList.add('bg-cyan-600', 'text-slate-950');
+                if(role === 'volunteer') activeBtn.classList.add('bg-indigo-600', 'text-white');
+                if(role === 'vendor') activeBtn.classList.add('bg-purple-600', 'text-white');
+                activeBtn.classList.remove('text-slate-400');
+            }
+
+            document.querySelectorAll('.role-view').forEach(view => view.classList.add('hidden'));
+            document.getElementById(`view-${role}`).classList.remove('hidden');
+
+            const titleEl = document.getElementById('persona-title');
+            const iconBox = document.getElementById('persona-badge-icon');
+
+            if(role === 'organizer') {
+                titleEl.textContent = 'Event Organizer Workspace';
+                iconBox.innerHTML = '<i class="fa-solid fa-user-gear"></i>';
+            } else if(role === 'admin') {
+                titleEl.textContent = 'Resource Manager / Admin Control';
+                iconBox.innerHTML = '<i class="fa-solid fa-warehouse"></i>';
+            } else if(role === 'volunteer') {
+                titleEl.textContent = 'Student Volunteer Duty Portal';
+                iconBox.innerHTML = '<i class="fa-solid fa-hands-helping"></i>';
+            } else if(role === 'vendor') {
+                titleEl.textContent = 'External Vendor Portal';
+                iconBox.innerHTML = '<i class="fa-solid fa-truck-field"></i>';
+            }
+
+            showToast(`Switched view context to ${role.toUpperCase()} persona.`);
+        }
+
+        // --- RENDER MATERIAL & RESOURCE TABLE ---
+        function renderResourceTable(filterCat = 'All') {
+            const tbody = document.getElementById('resource-table-body');
+            const evt = getActiveEvent();
+
+            const list = evt.resources.filter(r => filterCat === 'All' || r.category === filterCat);
+
+            if(list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-500 italic">No resource requirements added for this category yet.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = list.map(r => {
+                let badge = '';
+                if(r.status === 'Available') {
+                    badge = `<span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-bold">✅ Available</span>`;
+                } else if(r.status === 'Need') {
+                    const diff = r.required - r.available;
+                    badge = `<span class="px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px] font-bold">⚠️ Need ${diff}</span>`;
+                } else if(r.status === 'Conflict') {
+                    badge = `<span class="px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 text-[10px] font-bold">❌ Conflict / Overlap</span>`;
+                }
+
+                return `
+                    <tr class="hover:bg-slate-900/40 transition-colors">
+                        <td class="p-4 font-bold text-white flex items-center gap-2">
+                            ${r.name}
+                        </td>
+                        <td class="p-4 text-slate-400">${r.category}</td>
+                        <td class="p-4 font-semibold text-slate-200">${r.required}</td>
+                        <td class="p-4 font-semibold text-slate-200">${r.available}</td>
+                        <td class="p-4">${badge}</td>
+                        <td class="p-4 text-right">
+                            ${r.status === 'Conflict' ? `
+                                <button onclick="openConflictResolverModal()" class="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px]">
+                                    Resolve
+                                </button>
+                            ` : `
+                                <button onclick="showToast('Requisition logged for ${r.name}')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 font-semibold text-[10px]">
+                                    Requisition
+                                </button>
+                            `}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function filterResourceTable() {
+            const cat = document.getElementById('resource-category-select').value;
+            renderResourceTable(cat);
+        }
+
+        // --- RENDER KANBAN TASKS ---
+        function renderKanbanTasks() {
+            const todoContainer = document.getElementById('kanban-todo');
+            const inprogContainer = document.getElementById('kanban-inprog');
+            const doneContainer = document.getElementById('kanban-done');
+            const evt = getActiveEvent();
+
+            const todoList = evt.tasks.filter(t => t.status === 'To Do');
+            const inprogList = evt.tasks.filter(t => t.status === 'In Progress');
+            const doneList = evt.tasks.filter(t => t.status === 'Completed');
+
+            document.getElementById('todo-count').textContent = todoList.length;
+            document.getElementById('inprog-count').textContent = inprogList.length;
+            document.getElementById('done-count').textContent = doneList.length;
+
+            const cardTemplate = (t) => `
+                <div class="p-3 bg-slate-950 rounded-xl border border-slate-800/80 space-y-2 hover:border-slate-700 transition-all">
+                    <p class="font-bold text-white text-xs">${t.title}</p>
+                    <div class="flex items-center justify-between text-[10px] text-slate-400">
+                        <span class="text-indigo-300 font-medium"><i class="fa-solid fa-user text-[9px] mr-1"></i>${t.assignee}</span>
+                        <select onchange="updateTaskStatus('${t.id}', this.value)" class="bg-slate-900 border border-slate-800 text-slate-300 rounded px-1.5 py-0.5 focus:outline-none">
+                            <option value="To Do" ${t.status === 'To Do' ? 'selected' : ''}>To Do</option>
+                            <option value="In Progress" ${t.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
+                            <option value="Completed" ${t.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                        </select>
+                    </div>
+                </div>
+            `;
+
+            todoContainer.innerHTML = todoList.map(cardTemplate).join('');
+            inprogContainer.innerHTML = inprogList.map(cardTemplate).join('');
+            doneContainer.innerHTML = doneList.map(cardTemplate).join('');
+        }
+
+        function updateTaskStatus(taskId, newStatus) {
+            const evt = getActiveEvent();
+            const task = evt.tasks.find(t => t.id === taskId);
+            if(task) {
+                task.status = newStatus;
+                renderKanbanTasks();
+                renderVolunteerTasks();
+                showToast(`Task status updated to "${newStatus}"`);
+            }
+        }
+
+        // --- RENDER VOLUNTEER TASKS ---
+        function renderVolunteerTasks() {
+            const grid = document.getElementById('volunteer-tasks-grid');
+            const evt = getActiveEvent();
+
+            if(evt.tasks.length === 0) {
+                grid.innerHTML = `<p class="text-xs text-slate-500 italic col-span-2">No volunteer duties assigned yet.</p>`;
+                return;
+            }
+
+            grid.innerHTML = evt.tasks.map(t => `
+                <div class="p-4 bg-slate-900 rounded-xl border border-slate-800 flex justify-between items-center">
+                    <div>
+                        <h4 class="font-bold text-white text-xs">${t.title}</h4>
+                        <p class="text-[11px] text-slate-400 mt-0.5">Assigned to: <strong class="text-cyan-300">${t.assignee}</strong></p>
+                    </div>
+                    <span class="px-2.5 py-1 rounded text-[10px] font-bold ${t.status === 'Completed' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'}">
+                        ${t.status}
+                    </span>
+                </div>
+            `).join('');
+        }
+
+        // --- RENDER VENDORS LIST ---
+        function renderVendorsList() {
+            const container = document.getElementById('vendor-list');
+            const evt = getActiveEvent();
+
+            if(evt.vendors.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-500 italic">No vendor service contracts added.</p>`;
+                return;
+            }
+
+            container.innerHTML = evt.vendors.map(v => `
+                <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 flex justify-between items-center text-xs">
+                    <div>
+                        <p class="font-bold text-white">${v.name}</p>
+                        <p class="text-[11px] text-slate-400">${v.service}</p>
+                    </div>
+                    <div class="text-right">
+                        <span class="font-bold text-emerald-400 block">${v.amount}</span>
+                        <span class="text-[10px] text-slate-400">${v.status}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // --- RENDER EVENT SCHEDULE ---
+        function renderEventSchedule() {
+            const container = document.getElementById('event-timeline-container');
+            const evt = getActiveEvent();
+            document.getElementById('timeline-venue-tag').textContent = `Venue: ${evt.venue}`;
+
+            if(!evt.schedule || evt.schedule.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-500 italic">No schedule milestones defined.</p>`;
+                return;
+            }
+
+            container.innerHTML = evt.schedule.map(s => `
+                <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <span class="px-2.5 py-1 rounded-lg bg-indigo-500/20 text-indigo-300 font-mono font-bold text-[11px]">${s.time}</span>
+                        <div>
+                            <p class="font-bold text-white">${s.title}</p>
+                            <p class="text-[11px] text-slate-400">${s.note}</p>
+                        </div>
+                    </div>
+                    <span class="px-2 py-0.5 rounded ${s.badgeClass || 'bg-cyan-500/10 text-cyan-400'} text-[10px] font-bold">${s.status}</span>
+                </div>
+            `).join('');
+        }
+
+        // --- CONFLICT RESOLVER LOGIC ---
+        function openConflictResolverModal() {
+            document.getElementById('modal-conflict-resolver').classList.remove('hidden');
+        }
+
+        function closeConflictResolverModal() {
+            document.getElementById('modal-conflict-resolver').classList.add('hidden');
+        }
+
+        function resolveConflict(strategy) {
+            const evt = getActiveEvent();
+            const projResource = evt.resources.find(r => r.name.toLowerCase().includes('projector'));
+            if(projResource) {
+                projResource.status = 'Available';
+            }
+
+            document.getElementById('conflict-alert-banner').classList.add('hidden');
+            document.getElementById('conflict-badge').textContent = '0';
+            closeConflictResolverModal();
+            renderResourceTable();
+
+            if(strategy === 'reassign') {
+                showToast('Conflict Resolved! Event B projector time shifted to 02:00 PM.');
+            } else {
+                showToast('Conflict Resolved! Portable Projector 2 assigned to Coding Workshop.');
+            }
+        }
+
+        // --- EVENT CREATION & DELETION HANDLERS ---
+        function openCreateEventModal() {
+            editingEventId = null;
+            document.getElementById('event-modal-title').textContent = 'Create New College Event';
+            document.getElementById('form-evt-submit-btn').textContent = 'Create Event';
+            
+            document.getElementById('form-evt-title').value = '';
+            document.getElementById('form-evt-date').value = '25 Nov 2026';
+            document.getElementById('form-evt-venue').value = 'Seminar Hall 101';
+            document.getElementById('form-evt-time').value = '10:00 AM - 04:00 PM';
+            document.getElementById('form-evt-attend').value = '150 Students';
+            document.getElementById('form-evt-budget').value = '1200';
+            document.getElementById('form-evt-org').value = 'Robotics Club';
+
+            document.getElementById('modal-event-form').classList.remove('hidden');
+        }
+
+        function openEditEventModal() {
+            const evt = getActiveEvent();
+            editingEventId = evt.id;
+            document.getElementById('event-modal-title').textContent = 'Edit Event Details';
+            document.getElementById('form-evt-submit-btn').textContent = 'Save Changes';
+
+            document.getElementById('form-evt-title').value = evt.title;
+            document.getElementById('form-evt-date').value = evt.date;
+            document.getElementById('form-evt-venue').value = evt.venue;
+            document.getElementById('form-evt-time').value = evt.timeSlot;
+            document.getElementById('form-evt-attend').value = evt.attendance;
+            document.getElementById('form-evt-budget').value = evt.budgetPlanned;
+            document.getElementById('form-evt-org').value = evt.organizer;
+
+            document.getElementById('modal-event-form').classList.remove('hidden');
+        }
+
+        function closeEventModal() {
+            document.getElementById('modal-event-form').classList.add('hidden');
+        }
+
+        function handleEventFormSubmit(e) {
+            e.preventDefault();
+            const title = document.getElementById('form-evt-title').value;
+            const date = document.getElementById('form-evt-date').value;
+            const venue = document.getElementById('form-evt-venue').value;
+            const timeSlot = document.getElementById('form-evt-time').value;
+            const attend = document.getElementById('form-evt-attend').value;
+            const budget = parseInt(document.getElementById('form-evt-budget').value);
+            const org = document.getElementById('form-evt-org').value;
+
+            if(editingEventId) {
+                // Update Existing Event
+                const evt = events.find(e => e.id === editingEventId);
+                if(evt) {
+                    evt.title = title;
+                    evt.date = date;
+                    evt.venue = venue;
+                    evt.timeSlot = timeSlot;
+                    evt.attendance = attend;
+                    evt.budgetPlanned = budget;
+                    evt.organizer = org;
+                    showToast(`Updated event details for "${title}"`);
+                }
+            } else {
+                // Create New Event
+                const newId = 'evt-' + (events.length + 1);
+                const newEvt = {
+                    id: newId,
+                    title: title,
+                    date: date,
+                    venue: venue,
+                    timeSlot: timeSlot,
+                    organizer: org,
+                    attendance: attend,
+                    budgetPlanned: budget,
+                    budgetActual: Math.round(budget * 0.5),
+                    resources: [
+                        { id: newId + '-r1', name: 'Stage Projector', category: 'Equipment', required: 1, available: 1, status: 'Available' },
+                        { id: newId + '-r2', name: 'Microphones', category: 'Equipment', required: 2, available: 2, status: 'Available' },
+                        { id: newId + '-r3', name: 'Student Volunteers', category: 'Staffing', required: 10, available: 8, status: 'Need' },
+                        { id: newId + '-r4', name: 'Event Certificates', category: 'Materials', required: 100, available: 100, status: 'Available' }
+                    ],
+                    tasks: [
+                        { id: newId + '-t1', title: 'Setup Registration Table', assignee: 'Team Lead', status: 'To Do' }
+                    ],
+                    vendors: [],
+                    schedule: [
+                        { time: timeSlot, title: 'Main Event Session', note: `Hosted in ${venue}`, status: 'Scheduled', badgeClass: 'bg-emerald-500/10 text-emerald-400' }
+                    ]
+                };
+                events.push(newEvt);
+                activeEventId = newId;
+                showToast(`New Event "${title}" created successfully!`);
+            }
+
+            populateEventSelector();
+            closeEventModal();
+            refreshDashboard();
+        }
+
+        function deleteCurrentEvent() {
+            if(events.length <= 1) {
+                showToast('Cannot delete the last remaining event.');
+                return;
+            }
+
+            const evt = getActiveEvent();
+            if(confirm(`Are you sure you want to delete the event "${evt.title}"?`)) {
+                events = events.filter(e => e.id !== activeEventId);
+                activeEventId = events[0].id;
+                populateEventSelector();
+                refreshDashboard();
+                showToast(`Deleted event "${evt.title}".`);
+            }
+        }
+
+        // --- OTHER MODALS & FORM HANDLERS ---
+        function openRequestResourceModal() { document.getElementById('modal-request-resource').classList.remove('hidden'); }
+        function closeRequestResourceModal() { document.getElementById('modal-request-resource').classList.add('hidden'); }
+
+        function handleResourceRequestSubmit(e) {
+            e.preventDefault();
+            const name = document.getElementById('req-resource-name').value;
+            const cat = document.getElementById('req-resource-cat').value;
+            const qty = parseInt(document.getElementById('req-resource-qty').value);
+            const avail = parseInt(document.getElementById('req-resource-avail').value);
+
+            const status = avail >= qty ? 'Available' : 'Need';
+
+            const evt = getActiveEvent();
+            evt.resources.push({
+                id: evt.id + '-r' + (evt.resources.length + 1),
+                name: name,
+                category: cat,
+                required: qty,
+                available: avail,
+                status: status
+            });
+
+            closeRequestResourceModal();
+            refreshDashboard();
+            showToast(`Resource "${name}" added to inventory dashboard.`);
+        }
+
+        function openAddTaskModal() { document.getElementById('modal-add-task').classList.remove('hidden'); }
+        function closeAddTaskModal() { document.getElementById('modal-add-task').classList.add('hidden'); }
+
+        function handleAddTaskSubmit(e) {
+            e.preventDefault();
+            const title = document.getElementById('task-title').value;
+            const assignee = document.getElementById('task-assignee').value;
+
+            const evt = getActiveEvent();
+            evt.tasks.push({
+                id: evt.id + '-t' + (evt.tasks.length + 1),
+                title: title,
+                assignee: assignee,
+                status: 'To Do'
+            });
+
+            closeAddTaskModal();
+            renderKanbanTasks();
+            renderVolunteerTasks();
+            showToast(`New task assigned to ${assignee}`);
+        }
+
+        function openVendorBillModal() { document.getElementById('modal-vendor-bill').classList.remove('hidden'); }
+        function closeVendorBillModal() { document.getElementById('modal-vendor-bill').classList.add('hidden'); }
+
+        function handleVendorBillSubmit(e) {
+            e.preventDefault();
+            const name = document.getElementById('bill-vendor-name').value;
+            const amt = document.getElementById('bill-amount').value;
+
+            const evt = getActiveEvent();
+            evt.vendors.push({
+                id: evt.id + '-v' + (evt.vendors.length + 1),
+                name: name,
+                service: 'Submitted Invoice',
+                status: 'Invoiced',
+                amount: '$' + amt
+            });
+
+            closeVendorBillModal();
+            renderVendorsList();
+            showToast(`Vendor bill of $${amt} submitted for approval.`);
+        }
+
+        // --- SEPM DRAWER CONTROLLERS ---
+        function toggleSepmDrawer() {
+            document.getElementById('sepm-drawer').classList.toggle('translate-x-full');
+        }
+
+        function switchSepmTab(tab) {
+            document.querySelectorAll('.sepm-tab-btn').forEach(btn => {
+                btn.className = "sepm-tab-btn flex-1 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white";
+            });
+            document.getElementById(`sepm-tab-${tab}`).className = "sepm-tab-btn flex-1 py-1.5 rounded-lg text-xs font-semibold bg-cyan-600 text-slate-950";
+
+            document.getElementById('sepm-content-usecase').classList.add('hidden');
+            document.getElementById('sepm-content-conflict').classList.add('hidden');
+            document.getElementById('sepm-content-er').classList.add('hidden');
+
+            document.getElementById(`sepm-content-${tab}`).classList.remove('hidden');
+        }
+
+        // --- UTILITY TOAST NOTIFICATION ---
+        function showToast(message) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = "pointer-events-auto bg-slate-900 border border-cyan-500/40 text-slate-100 text-xs px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 transition-all duration-300 transform translate-y-2 opacity-0";
+            toast.innerHTML = `<i class="fa-solid fa-circle-check text-cyan-400"></i><span>${message}</span>`;
+
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.remove('translate-y-2', 'opacity-0'), 10);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
